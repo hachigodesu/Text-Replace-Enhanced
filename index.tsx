@@ -140,8 +140,8 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
     }
 
     const scopeOptions = [
-        { label: "Apply to your messages (visible to everyone)", value: "myMessages" },
-        { label: "Apply to others' messages (only visible to you)", value: "othersMessages" },
+        { label: "Apply to your outbound messages (visible to everyone)", value: "myMessages" },
+        { label: "Apply to all existing messages (only visible to you)", value: "othersMessages" },
         { label: "Apply to all messages", value: "allMessages" }
     ];
 
@@ -241,7 +241,7 @@ function modifyIncomingMessage(message: Message) {
     const currentUser = UserStore.getCurrentUser();
     const messageAuthor = message.author;
 
-    if (!message.content || !currentUser?.id || !messageAuthor?.id || messageAuthor.id === currentUser.id) {
+    if (!message.content || !currentUser?.id || !messageAuthor?.id) {
         return message.content;
     }
 
@@ -254,10 +254,12 @@ const TEXT_REPLACE_RULES_EXEMPT_CHANNEL_IDS = [
 ];
 
 export default definePlugin({
-    name: "TextReplace",
+    name: "TextReplaceEnhanced",
     description: "Replace text in your or others' messages. You can find pre-made rules in the #textreplace-rules channel in Vencord's Server.",
-    authors: [Devs.AutumnVN, Devs.TheKodeToad, EquicordDevs.Etorix],
-    isModified: true,
+    authors: [Devs.AutumnVN, Devs.TheKodeToad, EquicordDevs.Etorix, {
+                name: "rels",
+                id: 1067830761916477530n,
+            },],
 
     settings,
     modifyIncomingMessage,
