@@ -1,6 +1,8 @@
 # Text Replace Enhanced
 
-Text Replace Enhanced is an [Equicord](https://github.com/Equicord/Equicord) userplugin based on the official Text Replace plugin. Text Replace Enhanced modifies the plugin behavior to run replacements on the user's previously sent messages.
+Text Replace Enhanced is an [Equicord](https://github.com/Equicord/Equicord) User Plugin based on the official Text Replace plugin. Modifications include:
+- Replacements run on all existing messages instead of only other user's messages
+- Added exceptions option to the replacement rules
 
 ## Install
 

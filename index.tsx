@@ -27,7 +27,7 @@ import definePlugin, { OptionType } from "@utils/types";
 import { Message } from "@vencord/discord-types";
 import { Button, React, Select, TextInput, UserStore, useState } from "@webpack/common";
 
-type Rule = Record<"find" | "replace" | "onlyIfIncludes" | "scope", string>;
+type Rule = Record<"find" | "replace" | "onlyIfIncludes" | "exceptIfIncludes" | "scope", string>;
 
 interface TextReplaceProps {
     title: string;
@@ -38,6 +38,7 @@ const makeEmptyRule: () => Rule = () => ({
     find: "",
     replace: "",
     onlyIfIncludes: "",
+    exceptIfIncludes: "",
     scope: "myMessages"
 });
 const makeEmptyRuleArray = () => [makeEmptyRule()];
@@ -134,7 +135,7 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
 
         rulesArray[index][key] = e;
 
-        if (rulesArray[index].find === "" && rulesArray[index].replace === "" && rulesArray[index].onlyIfIncludes === "" && index !== rulesArray.length - 1) {
+        if (rulesArray[index].find === "" && rulesArray[index].replace === "" && rulesArray[index].onlyIfIncludes === "" && rulesArray[index].exceptIfIncludes === "" && index !== rulesArray.length - 1) {
             rulesArray.splice(index, 1);
         }
     }
@@ -167,6 +168,11 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                                     placeholder="Only if includes"
                                     initialValue={rule.onlyIfIncludes}
                                     onChange={e => onChange(e, index, "onlyIfIncludes")}
+                                />
+                                <Input
+                                    placeholder="Except if includes"
+                                    initialValue={rule.exceptIfIncludes}
+                                    onChange={e => onChange(e, index, "exceptIfIncludes")}
                                 />
                             </Flex>
                             {(index !== rulesArray.length - 1) && <Flex flexDirection="row" style={{ gap: "0.5em" }}>
@@ -215,6 +221,7 @@ function applyRules(content: string, scope: "myMessages" | "othersMessages" | "a
     for (const rule of settings.store.stringRules) {
         if (!rule.find) continue;
         if (rule.onlyIfIncludes && !content.includes(rule.onlyIfIncludes)) continue;
+        if (rule.exceptIfIncludes && content.includes(rule.exceptIfIncludes)) continue;
         if (rule.scope !== "allMessages" && rule.scope !== scope && scope !== "allMessages") continue;
 
         content = ` ${content} `.replaceAll(rule.find, rule.replace.replaceAll("\\n", "\n")).replace(/^\s|\s$/g, "");
@@ -223,6 +230,7 @@ function applyRules(content: string, scope: "myMessages" | "othersMessages" | "a
     for (const rule of settings.store.regexRules) {
         if (!rule.find) continue;
         if (rule.onlyIfIncludes && !content.includes(rule.onlyIfIncludes)) continue;
+        if (rule.exceptIfIncludes && content.includes(rule.exceptIfIncludes)) continue;
         if (rule.scope !== "allMessages" && rule.scope !== scope && scope !== "allMessages") continue;
 
         try {
@@ -255,7 +263,7 @@ const TEXT_REPLACE_RULES_EXEMPT_CHANNEL_IDS = [
 
 export default definePlugin({
     name: "TextReplaceEnhanced",
-    description: "Replace text in your or others' messages. You can find pre-made rules in the #textreplace-rules channel in Vencord's Server.",
+    description: "Replace text in outgoing, or existing messages with additional options.",
     authors: [Devs.AutumnVN, Devs.TheKodeToad, EquicordDevs.Etorix, {
                 name: "rels",
                 id: 1067830761916477530n,
