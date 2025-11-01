@@ -90,9 +90,9 @@ function stringToRegex(str: string) {
         : new RegExp(str); // Not a regex, return string
 }
 
-function renderFindError(find: string) {
+function renderFindError(regexStr: string) {
     try {
-        stringToRegex(find);
+        stringToRegex(regexStr);
         return null;
     } catch (e) {
         return (
@@ -193,7 +193,13 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                                 </Button>
                             </Flex>}
                             {(index !== rulesArray.length - 1) && <Divider style={{ width: "unset", margin: "0.5em 0" }}></Divider>}
-                            {isRegexRules && renderFindError(rule.find)}
+                            {isRegexRules && (
+                                <>
+                                    {renderFindError(rule.find)}
+                                    {renderFindError(rule.onlyIfIncludes)}
+                                    {renderFindError(rule.exceptIfIncludes)}
+                                </>
+                            )}
                         </React.Fragment>
                     )
                 }
@@ -213,6 +219,16 @@ function TextReplaceTesting() {
     );
 }
 
+function testRegex(content: string, regexStr: string): Boolean | null {
+    try {
+        const regex = stringToRegex(regexStr);
+        return regex.test(content);
+    } catch (e) {
+        new Logger("TextReplaceEnhanced").error(`Invalid regex: ${regexStr}`);
+        return null;
+    }
+}
+
 function applyRules(content: string, scope: "myMessages" | "othersMessages" | "allMessages"): string {
     if (content.length === 0) {
         return content;
@@ -229,15 +245,23 @@ function applyRules(content: string, scope: "myMessages" | "othersMessages" | "a
 
     for (const rule of settings.store.regexRules) {
         if (!rule.find) continue;
-        if (rule.onlyIfIncludes && !content.includes(rule.onlyIfIncludes)) continue;
-        if (rule.exceptIfIncludes && content.includes(rule.exceptIfIncludes)) continue;
         if (rule.scope !== "allMessages" && rule.scope !== scope && scope !== "allMessages") continue;
+        
+        if (rule.onlyIfIncludes) {
+            const match = testRegex(content, rule.onlyIfIncludes);
+            if (!match) continue;
+        }
+
+        if (rule.exceptIfIncludes) {
+            const match = testRegex(content, rule.exceptIfIncludes);
+            if (match || match === null) continue;
+        }
 
         try {
             const regex = stringToRegex(rule.find);
             content = content.replace(regex, rule.replace.replaceAll("\\n", "\n"));
         } catch (e) {
-            new Logger("TextReplace").error(`Invalid regex: ${rule.find}`);
+            new Logger("TextReplaceEnhanced").error(`Invalid regex: ${rule.find}`);
         }
     }
 

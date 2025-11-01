@@ -2,7 +2,8 @@
 
 Text Replace Enhanced is an [Equicord](https://github.com/Equicord/Equicord) User Plugin based on the official Text Replace plugin. Modifications include:
 - Replacements run on all existing messages instead of only other user's messages
-- Added exceptions option to the replacement rules
+- Added *Except if includes* option to the replacement rules
+- *Only/Except if includes* options accept Regular Expressions in regex replacement rules
 
 ## Install
 
