@@ -27,7 +27,7 @@ import definePlugin, { OptionType } from "@utils/types";
 import { Message } from "@vencord/discord-types";
 import { Button, React, Select, TextInput, UserStore, useState } from "@webpack/common";
 
-type Rule = Record<"find" | "replace" | "onlyIfIncludes" | "exceptIfIncludes" | "scope", string>;
+type Rule = Record<"find" | "replace" | "onlyIfIncludes" | "exceptIfIncludes" | "wbList" | "scope", string>;
 
 interface TextReplaceProps {
     title: string;
@@ -39,6 +39,7 @@ const makeEmptyRule: () => Rule = () => ({
     replace: "",
     onlyIfIncludes: "",
     exceptIfIncludes: "",
+    wbList: "",
     scope: "myMessages"
 });
 const makeEmptyRuleArray = () => [makeEmptyRule()];
@@ -90,7 +91,7 @@ function stringToRegex(str: string) {
         : new RegExp(str); // Not a regex, return string
 }
 
-function renderFindError(regexStr: string) {
+function renderFindRegexError(regexStr: string) {
     try {
         stringToRegex(regexStr);
         return null;
@@ -101,6 +102,16 @@ function renderFindError(regexStr: string) {
             </span>
         );
     }
+}
+
+function renderFindCommaSeperatedError(commaSeperatedStr: string) {
+    if(!commaSeperatedStr || commaSeperatedStr.match(/^!?[\d,\s]+$/)) return;
+    
+    return (
+        <span style={{ color: "var(--text-danger)" }}>
+            White/Blacklist must only contain channel IDs, commas, and spaces
+        </span>
+    )
 }
 
 function Input({ initialValue, onChange, placeholder }: {
@@ -135,7 +146,7 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
 
         rulesArray[index][key] = e;
 
-        if (rulesArray[index].find === "" && rulesArray[index].replace === "" && rulesArray[index].onlyIfIncludes === "" && rulesArray[index].exceptIfIncludes === "" && index !== rulesArray.length - 1) {
+        if (rulesArray[index].find === "" && rulesArray[index].replace === "" && rulesArray[index].onlyIfIncludes === "" && rulesArray[index].exceptIfIncludes === "" && rulesArray[index].wbList === "" && index !== rulesArray.length - 1) {
             rulesArray.splice(index, 1);
         }
     }
@@ -169,10 +180,17 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                                     initialValue={rule.onlyIfIncludes}
                                     onChange={e => onChange(e, index, "onlyIfIncludes")}
                                 />
+                            </Flex>
+                            <Flex flexDirection="row" style={{ flexGrow: 1, gap: "0.5em" }}>
                                 <Input
                                     placeholder="Except if includes"
                                     initialValue={rule.exceptIfIncludes}
                                     onChange={e => onChange(e, index, "exceptIfIncludes")}
+                                />
+                                <Input
+                                    placeholder="White/Blacklist"
+                                    initialValue={rule.wbList}
+                                    onChange={e => onChange(e, index, "wbList")}
                                 />
                             </Flex>
                             {(index !== rulesArray.length - 1) && <Flex flexDirection="row" style={{ gap: "0.5em" }}>
@@ -195,11 +213,14 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                             {(index !== rulesArray.length - 1) && <Divider style={{ width: "unset", margin: "0.5em 0" }}></Divider>}
                             {isRegexRules && (
                                 <>
-                                    {renderFindError(rule.find)}
-                                    {renderFindError(rule.onlyIfIncludes)}
-                                    {renderFindError(rule.exceptIfIncludes)}
+                                    {renderFindRegexError(rule.find)}
+                                    {renderFindRegexError(rule.onlyIfIncludes)}
+                                    {renderFindRegexError(rule.exceptIfIncludes)}
                                 </>
                             )}
+                            <>
+                                {renderFindCommaSeperatedError(rule.wbList)}
+                            </>
                         </React.Fragment>
                     )
                 }
@@ -229,7 +250,7 @@ function testRegex(content: string, regexStr: string): Boolean | null {
     }
 }
 
-function applyRules(content: string, scope: "myMessages" | "othersMessages" | "allMessages"): string {
+function applyRules(content: string, scope: "myMessages" | "othersMessages" | "allMessages", channelId?: string): string {
     if (content.length === 0) {
         return content;
     }
@@ -239,6 +260,12 @@ function applyRules(content: string, scope: "myMessages" | "othersMessages" | "a
         if (rule.onlyIfIncludes && !content.includes(rule.onlyIfIncludes)) continue;
         if (rule.exceptIfIncludes && content.includes(rule.exceptIfIncludes)) continue;
         if (rule.scope !== "allMessages" && rule.scope !== scope && scope !== "allMessages") continue;
+
+        if (rule.wbList && channelId) {
+            const channelList = rule.wbList.replace(/\s+/g, '').replace(/!/g, '').split(",");
+
+            if((rule.wbList.trim().startsWith("!") === channelList.includes(channelId))) continue;
+        }
 
         content = ` ${content} `.replaceAll(rule.find, rule.replace.replaceAll("\\n", "\n")).replace(/^\s|\s$/g, "");
     }
@@ -255,6 +282,12 @@ function applyRules(content: string, scope: "myMessages" | "othersMessages" | "a
         if (rule.exceptIfIncludes) {
             const match = testRegex(content, rule.exceptIfIncludes);
             if (match || match === null) continue;
+        }
+
+        if (rule.wbList && channelId) {
+            const channelList = rule.wbList.replace(/\s+/g, '').replace(/!/g, '').split(",");
+
+            if((rule.wbList.trim().startsWith("!") === channelList.includes(channelId))) continue;
         }
 
         try {
@@ -277,7 +310,7 @@ function modifyIncomingMessage(message: Message) {
         return message.content;
     }
 
-    return applyRules(message.content, "othersMessages");
+    return applyRules(message.content, "othersMessages", message.channel_id);
 }
 
 const TEXT_REPLACE_RULES_EXEMPT_CHANNEL_IDS = [
@@ -315,6 +348,6 @@ export default definePlugin({
     onBeforeMessageSend(channelId, msg) {
         // Replacing text in channels used for sharing/requesting rules may be messy.
         if (TEXT_REPLACE_RULES_EXEMPT_CHANNEL_IDS.includes(channelId)) return;
-        msg.content = applyRules(msg.content, "myMessages");
+        msg.content = applyRules(msg.content, "myMessages", channelId);
     }
 });

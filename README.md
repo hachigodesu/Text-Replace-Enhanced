@@ -4,6 +4,7 @@ Text Replace Enhanced is an [Equicord](https://github.com/Equicord/Equicord) Use
 - Replacements run on all existing messages instead of only other user's messages
 - Added *Except if includes* option to the replacement rules
 - *Only/Except if includes* options accept Regular Expressions in regex replacement rules
+- Per rule channel white/blacklisting using a comma seperated list of channel IDs (prepend ! for blacklist mode)
 
 ## Install
 
