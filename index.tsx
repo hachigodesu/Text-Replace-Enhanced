@@ -97,7 +97,7 @@ function renderFindRegexError(regexStr: string) {
         return null;
     } catch (e) {
         return (
-            <span style={{ color: "var(--text-danger)" }}>
+            <span style={{ color: "var(--text-feedback-critical)" }}>
                 {String(e)}
             </span>
         );
@@ -108,7 +108,7 @@ function renderFindCommaSeperatedError(commaSeperatedStr: string) {
     if(!commaSeperatedStr || commaSeperatedStr.match(/^!?[\d,\s]+$/)) return;
     
     return (
-        <span style={{ color: "var(--text-danger)" }}>
+        <span style={{ color: "var(--text-feedback-critical)" }}>
             White/Blacklist must only contain channel IDs, commas, and spaces
         </span>
     )
@@ -164,7 +164,7 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                 {
                     rulesArray.map((rule, index) =>
                         <React.Fragment key={`${rule.find}-${index}`}>
-                            <Flex flexDirection="row" style={{ flexGrow: 1, gap: "0.5em" }}>
+                            <Flex gap="0.5em" flexDirection="row" style={{ flexGrow: 1 }}>
                                 <Input
                                     placeholder="Find"
                                     initialValue={rule.find}
@@ -181,7 +181,7 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                                     onChange={e => onChange(e, index, "onlyIfIncludes")}
                                 />
                             </Flex>
-                            <Flex flexDirection="row" style={{ flexGrow: 1, gap: "0.5em" }}>
+                            <Flex gap="0.5em" flexDirection="row" style={{ flexGrow: 1 }}>
                                 <Input
                                     placeholder="Except if includes"
                                     initialValue={rule.exceptIfIncludes}
@@ -333,7 +333,7 @@ export default definePlugin({
         {
             find: "!1,hideSimpleEmbedContent",
             replacement: {
-                match: /(let{toAST:.{0,125}?)\(null!=\i\?\i:\i\).content/,
+                match: /(let{toAST:.{0,125}?)\(\i\?\?\i\).content/,
                 replace: "const textReplaceContent=$self.modifyIncomingMessage(arguments[2]?.contentMessage??arguments[1]);$1textReplaceContent"
             }
         },
