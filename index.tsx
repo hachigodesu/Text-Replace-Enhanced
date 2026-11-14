@@ -19,13 +19,17 @@
 import { definePluginSettings } from "@api/Settings";
 import { Divider } from "@components/Divider";
 import { Flex } from "@components/Flex";
-import { HeadingTertiary } from "@components/Heading";
+import { Heading } from "@components/Heading";
+import { Margins } from "@components/margins";
 import { DeleteIcon } from "@components/Icons";
 import { Devs, EquicordDevs } from "@utils/constants";
+import { classNameFactory } from "@utils/css";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType } from "@utils/types";
-import { Message } from "@vencord/discord-types";
-import { Button, React, Select, TextInput, UserStore, useState } from "@webpack/common";
+import { Button } from "@components/Button";
+import { React, Select, TextInput, UserStore, useState } from "@webpack/common";
+
+const cl = classNameFactory("vc-textReplace-");
 
 type Rule = Record<"find" | "replace" | "onlyIfIncludes" | "exceptIfIncludes" | "wbList" | "scope", string>;
 
@@ -159,7 +163,7 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
 
     return (
         <>
-            <HeadingTertiary>{title}</HeadingTertiary>
+            <Heading className={Margins.bottom8}>{title}</Heading>
             <Flex flexDirection="column" style={{ gap: "0.5em", paddingBottom: "1.25em" }}>
                 {
                     rulesArray.map((rule, index) =>
@@ -203,11 +207,11 @@ function TextReplace({ title, rulesArray }: TextReplaceProps) {
                                     />
                                 </div>
                                 <Button
-                                    size={Button.Sizes.MIN}
+                                    className={cl("delete-button")}
+                                    variant="dangerPrimary"
                                     onClick={() => onClickRemove(index)}
-                                    style={{ flex: 0.10, backgroundColor: "var(--input-background)", border: "1px solid var(--input-border)", color: "var(--status-danger)" }}
                                 >
-                                    <DeleteIcon style={{ verticalAlign: "middle" }} />
+                                    Delete Rule
                                 </Button>
                             </Flex>}
                             {(index !== rulesArray.length - 1) && <Divider style={{ width: "unset", margin: "0.5em 0" }}></Divider>}
@@ -233,7 +237,7 @@ function TextReplaceTesting() {
     const [value, setValue] = useState("");
     return (
         <>
-            <HeadingTertiary>Test Rules</HeadingTertiary>
+            <Heading className={Margins.bottom8}>Rule Tester</Heading>
             <TextInput placeholder="Type a message" onChange={setValue} />
             <TextInput placeholder="Message with rules applied" editable={false} value={applyRules(value, "allMessages")} />
         </>
